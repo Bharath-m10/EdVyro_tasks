@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internship Board</title>
+    <style>
+        /* CSS for responsiveness and layout */
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #0f172a; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        header { text-align: center; margin-bottom: 2rem; }
+        
+        .controls { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2rem; }
+        .controls input, .controls select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; width: 100%; max-width: 300px; }
+        
+        /* Responsive Grid for mobile, tablet, and desktop */
+        .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: auto; }
+        
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .card h3 { margin-top: 0; color: var(--primary); }
+        
+        .tag { display: inline-block; background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; margin-right: 5px; }
+        .empty-state { text-align: center; grid-column: 1 / -1; padding: 2rem; color: #64748b; }
+        
+        /* Accessibility focus states */
+        input:focus, select:focus, .card:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Internship Opportunities</h1>
+</header>
+
+<div class="controls">
+    <!-- Accessible Form Labels -->
+    <label for="search" style="display:none;">Search Internships</label>
+    <input type="text" id="search" placeholder="Search roles or companies...">
+
+    <label for="domain" style="display:none;">Filter by Domain</label>
+    <select id="domain">
+        <option value="all">All Domains</option>
+        <option value="frontend">Frontend</option>
+        <option value="backend">Backend</option>
+        <option value="fullstack">Full Stack</option>
+    </select>
+</div>
+
+<main id="board" class="board" aria-live="polite">
+    <!-- Cards get injected here via JavaScript -->
+</main>
+
+<script>
+    // 1. Reusable Internship Card Data
+    const internships = [
+        { id: 1, role: 'Frontend Developer Intern', company: 'TechCorp', domain: 'frontend', location: 'Remote' },
+        { id: 2, role: 'Backend Engineering Intern', company: 'DataSystems', domain: 'backend', location: 'Bangalore' },
+        { id: 3, role: 'Full Stack Intern', company: 'WebSolutions', domain: 'fullstack', location: 'Chennai' },
+        { id: 4, role: 'React Developer Intern', company: 'UIWorks', domain: 'frontend', location: 'Remote' }
+    ];
+
+    const board = document.getElementById('board');
+    const searchInput = document.getElementById('search');
+    const domainSelect = document.getElementById('domain');
+
+    // 2. DOM Rendering Function
+    function renderCards(data) {
+        board.innerHTML = '';
+        
+        // Empty State handling
+        if (data.length === 0) {
+            board.innerHTML = '<div class="empty-state"><h2>No internships found</h2><p>Try adjusting your search or filters.</p></div>';
+            return;
+        }
+        
+        data.forEach(item => {
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.tabIndex = 0; // Enables keyboard navigation
+            card.innerHTML = `
+                <h3>${item.role}</h3>
+                <p><strong>Company:</strong> ${item.company}</p>
+                <p><strong>Location:</strong> ${item.location}</p>
+                <span class="tag">${item.domain.toUpperCase()}</span>
+            `;
+            board.appendChild(card);
+        });
+    }
+
+    // 3. Search and Domain Filters Logic
+    function filterData() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const domain = domainSelect.value;
+
+        const filtered = internships.filter(item => {
+            const matchesSearch = item.role.toLowerCase().includes(searchTerm) || item.company.toLowerCase().includes(searchTerm);
+            const matchesDomain = domain === 'all' || item.domain === domain;
+            return matchesSearch && matchesDomain;
+        });
+        
+        renderCards(filtered);
+    }
+
+    // Event Listeners for interactive filtering
+    searchInput.addEventListener('input', filterData);
+    domainSelect.addEventListener('change', filterData);
+
+    // Initial render on page load
+    renderCards(internships);
+</script>
+</body>
+</html>
