@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internship Board</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #0f172a; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; max-width: 800px; margin: auto; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1rem; }
+        .status-msg { text-align: center; padding: 2rem; background: #e2e8f0; border-radius: 8px; }
+        .error { color: #dc2626; background: #fee2e2; }
+        button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        form { margin-top: 1rem; display: flex; gap: 0.5rem; flex-direction: column; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<h1>Available Internships</h1>
+<main id="board" aria-live="polite">
+    <!-- Initial Loading State -->
+    <div class="status-msg">Loading internships...</div>
+</main>
+
+<script>
+    const board = document.getElementById('board');
+
+    async function fetchInternships() {
+        board.innerHTML = '<div class="status-msg">Loading internships...</div>';
+        try {
+            const res = await fetch('http://localhost:3000/api/internships');
+            if (!res.ok) throw new Error('Network response was not ok');
+            const result = await res.json();
+            renderCards(result.data);
+        } catch (err) {
+            // Failure State & Retry Mechanism
+            board.innerHTML = `
+                <div class="status-msg error">
+                    <p>Failed to load internships.</p>
+                    <button onclick="fetchInternships()">Retry</button>
+                </div>
+            `;
+        }
+    }
+
+    function renderCards(data) {
+        if (!data || data.length === 0) {
+            board.innerHTML = '<div class="status-msg">No internships found.</div>';
+            return;
+        }
+        
+        board.innerHTML = '';
+        data.forEach(item => {
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.innerHTML = `
+                <h3>${item.role} at ${item.company}</h3>
+                <p>Domain: ${item.domain}</p>
+                <form onsubmit="submitApplication(event, ${item.id})">
+                    <h4>Apply for this role</h4>
+                    <!-- Client-Side Validation -->
+                    <input type="text" id="name-${item.id}" placeholder="Full Name" required>
+                    <input type="email" id="email-${item.id}" placeholder="Email Address" required>
+                    <button type="submit">Submit Application</button>
+                    <p id="msg-${item.id}" style="color: green; font-size: 0.875rem; display: none;">Application sent!</p>
+                </form>
+            `;
+            board.appendChild(card);
+        });
+    }
+
+    async function submitApplication(event, internshipId) {
+        event.preventDefault();
+        const name = document.getElementById(`name-${internshipId}`).value;
+        const email = document.getElementById(`email-${internshipId}`).value;
+
+        try {
+            const res = await fetch('http://localhost:3000/api/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ internshipId, name, email })
+            });
+            
+            if (res.ok) {
+                document.getElementById(`msg-${internshipId}`).style.display = 'block';
+                event.target.reset();
+            } else {
+                alert('Failed to submit application. Please check your inputs.');
+            }
+        } catch (err) {
+            alert('Server error. Please try again.');
+        }
+    }
+
+    // Initial fetch
+    fetchInternships();
+</script>
+</body>
+</html>
